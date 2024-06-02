@@ -1,0 +1,1 @@
+python test_face_deblur.py --dataroot ./facades/github/ --valDataroot /home/dejavu/Code/UMSN-Face-Deblurring/Test_data_Helen_3/tttt --netG ./pretrained_models/Deblur_epoch_Best.pth

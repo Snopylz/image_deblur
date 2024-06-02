@@ -25,9 +25,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', required=False,
   default='pix2pix',  help='')
 parser.add_argument('--dataroot', required=False,
-  default='', help='path to trn dataset')
+  default='./facades/github/', help='path to trn dataset')
 parser.add_argument('--valDataroot', required=False,
-  default='', help='path to val dataset')
+  default='/home/dejavu/Code/UMSN-Face-Deblurring/output_images', help='path to val dataset')
 parser.add_argument('--mode', type=str, default='B2A', help='B2A: facade, A2B: edges2shoes')
 parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
 parser.add_argument('--valBatchSize', type=int, default=1, help='input batch size')
@@ -51,7 +51,7 @@ parser.add_argument('--lambdaIMG', type=float, default=1, help='lambdaIMG')
 parser.add_argument('--poolSize', type=int, default=50, help='Buffer size for storing previously generated samples from G')
 parser.add_argument('--wd', type=float, default=0.0000, help='weight decay in D')
 parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam')
-parser.add_argument('--netG', default='', help="path to netG (to continue training)")
+parser.add_argument('--netG', default='./pretrained_models/Deblur_epoch_Best.pth', help="path to netG (to continue training)")
 parser.add_argument('--netD', default='', help="path to netD (to continue training)")
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=1)
 parser.add_argument('--exp', default='sample', help='folder to output images and model checkpoints')
@@ -70,16 +70,16 @@ torch.cuda.manual_seed_all(opt.manualSeed)
 print("Random Seed: ", opt.manualSeed)
 
 # Initialize dataloader
-dataloader = getLoader(opt.dataset,
-                       opt.dataroot,
-                       opt.originalSize,
-                       opt.imageSize,
-                       opt.batchSize,
-                       opt.workers,
-                       mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5),
-                       split='val',
-                       shuffle=True,
-                       seed=opt.manualSeed)
+# dataloader = getLoader(opt.dataset,
+#                        opt.dataroot,
+#                        opt.originalSize,
+#                        opt.imageSize,
+#                        opt.batchSize,
+#                        opt.workers,
+#                        mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5),
+#                        split='val',
+#                        shuffle=True,
+#                        seed=opt.manualSeed)
 opt.dataset='pix2pix_val'
 
 valDataloader = getLoader(opt.dataset,
@@ -94,7 +94,7 @@ valDataloader = getLoader(opt.dataset,
                           seed=opt.manualSeed)
 
 # get logger
-trainLogger = open('%s/train.log' % opt.exp, 'w')
+# trainLogger = open('%s/train.log' % opt.exp, 'w')
 
 
 
@@ -181,9 +181,6 @@ input_256 = Variable(input_256)
 
 label_d = Variable(label_d.cuda())
 
-
-
-
 def norm_ip(img, min, max):
     img.clamp_(min=min, max=max)
     img.add_(-min).div_(max - min)
@@ -225,8 +222,6 @@ for epoch in range(1):
 
       z=0
 
-
-
       with torch.no_grad():
         for idx in range(val_input.size(0)):
             single_img = val_input[idx,:,:,:].unsqueeze(0)
@@ -250,9 +245,11 @@ for epoch in range(1):
             S_input = torch.cat([smaps,val_inputv],1)
             x_hat_val, x_hat_val64 = netG(val_inputv,val_inputv_256,smaps,smaps64)"""
             
-            
+            # val_inputv_256 对应1，3，64，64
             #x_hatcls1,x_hatcls2,x_hatcls3,x_hatcls4,x_lst1,x_lst2,x_lst3,x_lst4 = netG(val_inputv,val_inputv_256,smaps_i,smaps_i64,class1,class2,class3,class4)
             smaps,smaps64 = netS(val_inputv,val_inputv_256)
+            # smaps: 1,4,128,128 smaps64 1,4,64,64
+            # class1 1,1,128,128
             class1 = torch.zeros([1,1,opt.originalSize,opt.originalSize], dtype=torch.float32)
             class1[:,0,:,:] = smaps[:,0,:,:]
             class2 = torch.zeros([1,1,opt.originalSize,opt.originalSize], dtype=torch.float32)
@@ -304,7 +301,7 @@ for epoch in range(1):
             tensor=norm_range(tensor, None)
             print(tensor.min(),tensor.max())
 
-            filename='./result_all/deblurh/'+str(i+1)+'.png'
+            filename='./result_all/deblurh_mmpd/'+str(i+1)+'.png'
             ndarr = tensor.mul(255).clamp(0, 255).byte().permute(1, 2, 0).numpy()
             im = Image.fromarray(ndarr)
 
